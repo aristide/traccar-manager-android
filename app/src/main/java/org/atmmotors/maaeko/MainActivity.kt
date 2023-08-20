@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 @file:Suppress("DEPRECATION")
-package org.traccar.manager
+package org.atmmotors.maaeko
 
 import android.content.Intent
 import android.os.Build
@@ -23,7 +23,6 @@ import android.webkit.WebViewFragment
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.preference.PreferenceManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,11 +42,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initContent() {
-        if (PreferenceManager.getDefaultSharedPreferences(this).contains(PREFERENCE_URL)) {
-            fragmentManager.beginTransaction().add(android.R.id.content, MainFragment()).commit()
-        } else {
-            fragmentManager.beginTransaction().add(android.R.id.content, StartFragment()).commit()
-        }
+        fragmentManager.beginTransaction().add(android.R.id.content, MainFragment()).commit()
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -63,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val fragment = fragmentManager.findFragmentById(android.R.id.content) as? WebViewFragment
         if (fragment?.webView?.canGoBack() == true) {
@@ -72,7 +68,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    companion object {
-        const val PREFERENCE_URL = "url"
-    }
+    companion object {}
 }

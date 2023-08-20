@@ -4,15 +4,21 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 33
 
+    Properties properties = new Properties()
+    if (project.rootProject.file('local.properties').canRead()) {
+        properties.load(project.rootProject.file("local.properties").newDataInputStream())
+    }
+
     defaultConfig {
-        applicationId 'org.traccar.manager'
+        applicationId 'org.atmmotors.maaeko'
         minSdkVersion 19
         targetSdkVersion 33
         versionCode 36
-        versionName '4.0'
+        versionName '1.0'
         multiDexEnabled true
+        buildConfigField 'String', 'PREFERENCE_URL', properties.getProperty('PREFERENCE_URL', "${project.PREFERENCE_URL}")
     }
-    namespace 'org.traccar.manager'
+    namespace 'org.atmmotors.maaeko'
 
     flavorDimensions 'default'
     productFlavors {
@@ -20,6 +26,50 @@ android {
             isDefault = true
         }
         google
+    }
+
+    signingConfigs {
+        if (rootProject.file('signing-release.properties').exists()) {
+            def signingRelease = new Properties()
+            signingRelease.load(new FileInputStream(rootProject.file('signing-release.properties')))
+            release {
+                storeFile rootProject.file(signingRelease.storeFile)
+                storePassword signingRelease.storePassword
+                keyAlias signingRelease.keyAlias
+                keyPassword signingRelease.keyPassword
+            }
+        }else {
+            release {}
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            debuggable true
+            applicationIdSuffix ".debug"
+            versionNameSuffix '-dev'
+            android.applicationVariants.all { variant ->
+                variant.outputs.all {
+                    outputFileName = "maaeko-${variant.versionName}(${variant.versionCode}).apk"
+                }
+            }
+        }
+        release {
+            minifyEnabled true
+            debuggable false
+            shrinkResources true
+            zipAlignEnabled true
+            jniDebuggable false
+            renderscriptDebuggable false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            android.applicationVariants.all { variant ->
+                variant.outputs.all {
+                    outputFileName = "maaeko-${variant.versionName}(${variant.versionCode}).apk"
+                }
+            }
+            signingConfig signingConfigs.release
+        }
     }
 }
 

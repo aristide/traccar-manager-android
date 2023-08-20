@@ -1,12 +1,19 @@
 <resources>
-    <string name="app_name">Traccar Manager</string>
+    <string name="app_name">Maaeko</string>
     <string name="label_server">Server</string>
     <string name="label_info">This screen will be shown only once. After you click the button, server address will be saved in preferences. To change it, clear app data from application manager.</string>
     <string name="button_start">Start</string>
     <string name="error_connection">Server connection failed</string>
     <string name="file_browser">File Browser</string>
     <string name="notification_channel">Default</string>
-    <string name="permission_location_rationale">App requires location permission to show current location on the map</string>
-    <string name="biometric_title">Biometric login</string>
-    <string name="biometric_cancel">Use account password</string>
+    <string name="permission_location_rationale">L\'application nécessite une autorisation de localisation pour afficher la position actuelle sur la carte</string>
+    <string name="biometric_title">Connexion biométrique</string>
+    <string name="biometric_cancel">Utiliser le mot de passe du compte</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="no_internet_title">Oups!!!</string>
+    <string name="no_internet_text">Aucune connexion Internet n\'a été trouvée. Vérifiez votre connexion ou réessayez.</string>
+    <string name="internet_error_text">Il y a eu une erreur lors du chargement de l\'application. Réessayez.</string>
+    <string name="no_internet_button_title">Réessayez</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

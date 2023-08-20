@@ -14,31 +14,45 @@
  * limitations under the License.
  */
 @file:Suppress("DEPRECATION")
-package org.traccar.manager
+package org.atmmotors.maaeko
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Fragment
 import android.app.DownloadManager
 import android.content.*
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Message
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.*
+import android.widget.ProgressBar
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
+import org.atmmotors.maaeko.utils.UrlChecker
 
-class MainFragment : WebViewFragment() {
+
+class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
 
     private lateinit var broadcastManager: LocalBroadcastManager
+    private lateinit var loadingBar: ProgressBar
+    private lateinit var webView: WebView
+    private lateinit var context: Context
 
     inner class AppInterface {
         @JavascriptInterface
@@ -60,7 +74,7 @@ class MainFragment : WebViewFragment() {
             } else if (message.startsWith("server")) {
                 val url = message.substring(7)
                 PreferenceManager.getDefaultSharedPreferences(activity)
-                    .edit().putString(MainActivity.PREFERENCE_URL, url).apply()
+                    .edit().putString(BuildConfig.PREFERENCE_URL, url).apply()
                 activity.runOnUiThread { loadPage() }
             }
         }
@@ -71,6 +85,20 @@ class MainFragment : WebViewFragment() {
         broadcastManager = LocalBroadcastManager.getInstance(activity)
     }
 
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+
+        val view = inflater.inflate(R.layout.fragment_main, container, false)
+        webView = view.findViewById(R.id.webView);
+        loadingBar = view.findViewById(R.id.loadingBar);
+        context = view.context
+        return view
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -78,6 +106,53 @@ class MainFragment : WebViewFragment() {
         if ((activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             WebView.setWebContentsDebuggingEnabled(true)
         }
+        UrlChecker(this, view.context).execute(BuildConfig.PREFERENCE_URL)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onUrlCheckCompleted(isWorking: Boolean, context: Context?) {
+        if(isWorking){
+            openUpUrl()
+        }else{
+            openNoInternetFragment();
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun openUpUrl(){
+        val webViewClient = object : WebViewClient() {
+
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                loadingBar.visibility = View.VISIBLE
+                Toast.makeText(context, "Page started",Toast.LENGTH_LONG)
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    CookieManager.getInstance().flush()
+                }
+                loadingBar.visibility = View.GONE
+                Toast.makeText(context, "Page finished",Toast.LENGTH_LONG)
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                loadingBar.visibility = View.GONE
+                if(!isOnline(context)){
+                    Toast.makeText(context, "No internet", Toast.LENGTH_LONG).show()
+                    openNoInternetFragment();
+                }else{
+                    Toast.makeText(context, "Internet Error", Toast.LENGTH_LONG).show()
+                    openInternetErrorFragment();
+                }
+            }
+        }
+
         webView.webViewClient = webViewClient
         webView.webChromeClient = webChromeClient
         webView.setDownloadListener(downloadListener)
@@ -92,22 +167,27 @@ class MainFragment : WebViewFragment() {
     }
 
     private fun loadPage() {
-        val url = PreferenceManager.getDefaultSharedPreferences(activity)
-            .getString(MainActivity.PREFERENCE_URL, null)
-        if (url != null) {
-            val mainActivity = activity as? MainActivity
-            val eventId = mainActivity?.pendingEventId
-            mainActivity?.pendingEventId = null
-            if (eventId != null) {
-                webView.loadUrl("$url?eventId=$eventId")
-            } else {
-                webView.loadUrl(url)
-            }
+        val url = BuildConfig.PREFERENCE_URL
+        val mainActivity = activity as? MainActivity
+        val eventId = mainActivity?.pendingEventId
+        mainActivity?.pendingEventId = null
+        if (eventId != null) {
+            webView.loadUrl("$url?eventId=$eventId")
         } else {
-            activity.fragmentManager
-                .beginTransaction().replace(android.R.id.content, StartFragment())
-                .commitAllowingStateLoss()
+            webView.loadUrl(url)
         }
+    }
+
+    private fun openNoInternetFragment() {
+        activity.fragmentManager
+            .beginTransaction().replace(android.R.id.content, NoInternetFragment())
+            .commitAllowingStateLoss()
+    }
+
+    private fun openInternetErrorFragment() {
+        activity.fragmentManager
+            .beginTransaction().replace(android.R.id.content, InternetErrorFragment())
+            .commitAllowingStateLoss()
     }
 
     private val tokenBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -177,14 +257,27 @@ class MainFragment : WebViewFragment() {
     private var geolocationRequestOrigin: String? = null
     private var geolocationCallback: GeolocationPermissions.Callback? = null
 
-    private val webViewClient = object : WebViewClient() {
+    fun isOnline(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        override fun onPageFinished(view: WebView?, url: String?) {
-            super.onPageFinished(view, url)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                CookieManager.getInstance().flush()
+        // For 29 api or above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork) ?: return false
+            return when {
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ->    true
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ->   true
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ->   true
+                else ->     false
             }
         }
+        // For below 29 api
+        else {
+            @Suppress("DEPRECATION")
+            if (connectivityManager.activeNetworkInfo != null && connectivityManager.activeNetworkInfo!!.isConnectedOrConnecting) {
+                return true
+            }
+        }
+        return false
     }
 
     private val webChromeClient = object : WebChromeClient() {
@@ -198,6 +291,11 @@ class MainFragment : WebViewFragment() {
             } else {
                 false
             }
+        }
+
+        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+            super.onProgressChanged(view, newProgress)
+            loadingBar.progress = newProgress
         }
 
         override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
@@ -265,6 +363,7 @@ class MainFragment : WebViewFragment() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private val downloadListener = DownloadListener { url, userAgent, contentDisposition, mimeType, contentLength ->
         val request = DownloadManager.Request(Uri.parse(url))
         request.setMimeType(mimeType)
@@ -288,4 +387,5 @@ class MainFragment : WebViewFragment() {
         private const val REQUEST_PERMISSIONS_NOTIFICATION = 2
         private const val REQUEST_FILE_CHOOSER = 1
     }
+
 }

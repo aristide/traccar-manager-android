@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 @file:Suppress("DEPRECATION")
-package org.traccar.manager
+package org.atmmotors.maaeko
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
@@ -101,7 +101,7 @@ class StartFragment : Fragment(), View.OnClickListener {
 
     private fun onSuccess() {
         PreferenceManager.getDefaultSharedPreferences(activity)
-            .edit().putString(MainActivity.PREFERENCE_URL, serverField.text.toString()).apply()
+            .edit().putString(BuildConfig.PREFERENCE_URL, serverField.text.toString()).apply()
         activity.fragmentManager
             .beginTransaction().replace(android.R.id.content, MainFragment())
             .commitAllowingStateLoss()
