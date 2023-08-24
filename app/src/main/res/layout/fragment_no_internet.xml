@@ -56,7 +56,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/button"
-            android:capitalize="none"
             android:text="@string/no_internet_button_title"
             android:textAllCaps="false"
             android:textColor="@android:color/white"

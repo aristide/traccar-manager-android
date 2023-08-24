@@ -1,6 +1,7 @@
 .gradle
 .idea/
 local.properties
+debug.properties
 *.iml
 build/
 app/src/main/assets
@@ -8,3 +9,4 @@ app/src/main/assets
 google-services.json
 *.jks
 signing*.properties
+

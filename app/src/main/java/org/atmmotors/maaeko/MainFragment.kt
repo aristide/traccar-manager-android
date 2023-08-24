@@ -37,7 +37,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import android.widget.ProgressBar
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -45,6 +44,7 @@ import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import org.atmmotors.maaeko.utils.UrlChecker
+import java.util.Locale
 
 
 class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
@@ -106,7 +106,7 @@ class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
         if ((activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             WebView.setWebContentsDebuggingEnabled(true)
         }
-        UrlChecker(this, view.context).execute(BuildConfig.PREFERENCE_URL)
+        UrlChecker(this, view.context).execute("https://www.google.com")
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -125,7 +125,6 @@ class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 loadingBar.visibility = View.VISIBLE
-                Toast.makeText(context, "Page started",Toast.LENGTH_LONG)
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -134,7 +133,6 @@ class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
                     CookieManager.getInstance().flush()
                 }
                 loadingBar.visibility = View.GONE
-                Toast.makeText(context, "Page finished",Toast.LENGTH_LONG)
             }
 
             override fun onReceivedError(
@@ -144,15 +142,13 @@ class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
             ) {
                 loadingBar.visibility = View.GONE
                 if(!isOnline(context)){
-                    Toast.makeText(context, "No internet", Toast.LENGTH_LONG).show()
                     openNoInternetFragment();
                 }else{
-                    Toast.makeText(context, "Internet Error", Toast.LENGTH_LONG).show()
                     openInternetErrorFragment();
                 }
             }
         }
-
+        val language = Locale.getDefault().language
         webView.webViewClient = webViewClient
         webView.webChromeClient = webChromeClient
         webView.setDownloadListener(downloadListener)
@@ -162,6 +158,7 @@ class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
         webSettings.domStorageEnabled = true
         webSettings.databaseEnabled = true
         webSettings.mediaPlaybackRequiresUserGesture = false
+        webSettings.userAgentString = "Mozilla/5.0 (Linux; Android) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Mobile Safari/537.36 $language"
         webSettings.setSupportMultipleWindows(true)
         loadPage()
     }

@@ -4,9 +4,19 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 33
 
-    Properties properties = new Properties()
+    Properties localProperties = new Properties()
     if (project.rootProject.file('local.properties').canRead()) {
-        properties.load(project.rootProject.file("local.properties").newDataInputStream())
+        localProperties.load(project.rootProject.file("local.properties").newDataInputStream())
+    }
+
+    Properties gradleProperties = new Properties()
+    if (project.rootProject.file('gradle.properties').canRead()) {
+        gradleProperties.load(project.rootProject.file("gradle.properties").newDataInputStream())
+    }
+
+    Properties debugProperties = new Properties()
+    if (project.rootProject.file('debug.properties').canRead()) {
+        debugProperties.load(project.rootProject.file("debug.properties").newDataInputStream())
     }
 
     defaultConfig {
@@ -16,7 +26,7 @@ android {
         versionCode 36
         versionName '1.0'
         multiDexEnabled true
-        buildConfigField 'String', 'PREFERENCE_URL', properties.getProperty('PREFERENCE_URL', "${project.PREFERENCE_URL}")
+        buildConfigField 'String', 'PREFERENCE_URL', localProperties.getProperty('PREFERENCE_URL', "${project.PREFERENCE_URL}")
     }
     namespace 'org.atmmotors.maaeko'
 
@@ -45,10 +55,11 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField 'String', 'PREFERENCE_URL', debugProperties.getProperty('PREFERENCE_URL', "${project.PREFERENCE_URL}")
             minifyEnabled false
             debuggable true
-            applicationIdSuffix ".debug"
-            versionNameSuffix '-dev'
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
             android.applicationVariants.all { variant ->
                 variant.outputs.all {
                     outputFileName = "maaeko-${variant.versionName}(${variant.versionCode}).apk"
@@ -56,12 +67,14 @@ android {
             }
         }
         release {
+            buildConfigField 'String', 'PREFERENCE_URL', gradleProperties.getProperty('PREFERENCE_URL', "${project.PREFERENCE_URL}")
             minifyEnabled true
             debuggable false
             shrinkResources true
             zipAlignEnabled true
             jniDebuggable false
             renderscriptDebuggable false
+            versionNameSuffix '-release'
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             android.applicationVariants.all { variant ->
                 variant.outputs.all {
