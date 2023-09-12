@@ -217,6 +217,11 @@ class MainFragment : Fragment(), UrlChecker.OnUrlCheckListener {
         broadcastManager.registerReceiver(eventIdBroadcastReceiver, IntentFilter(EVENT_EVENT))
     }
 
+    override fun onResume() {
+        super.onResume()
+        webView.reload()
+    }
+
     override fun onStop() {
         super.onStop()
         broadcastManager.unregisterReceiver(tokenBroadcastReceiver)

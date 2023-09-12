@@ -14,11 +14,6 @@ android {
         gradleProperties.load(project.rootProject.file("gradle.properties").newDataInputStream())
     }
 
-    Properties debugProperties = new Properties()
-    if (project.rootProject.file('debug.properties').canRead()) {
-        debugProperties.load(project.rootProject.file("debug.properties").newDataInputStream())
-    }
-
     defaultConfig {
         applicationId 'org.atmmotors.maaeko'
         minSdkVersion 19
@@ -55,7 +50,6 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField 'String', 'PREFERENCE_URL', debugProperties.getProperty('PREFERENCE_URL', "${project.PREFERENCE_URL}")
             minifyEnabled false
             debuggable true
             applicationIdSuffix '.debug'
